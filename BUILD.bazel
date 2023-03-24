@@ -1,0 +1,31 @@
+load("//build/fusesoc:rules.bzl", "fusesoc_run")
+
+exports_files(["**/*"])
+exports_files(["BUILD.bazel"])
+
+filegroup(
+    name = "allfiles",
+    visibility = ["//visibility:public"],
+    srcs = glob(["**/*"]),
+)
+
+fusesoc_run(
+    name = "muntjac_core_fusesoc",
+    tool = "verilator",
+    target = "sim",
+    cores_root = "@muntjac//:BUILD.bazel",
+    systems = ["lowrisc:muntjac:core_tb:0.1"],
+    output_groups = {
+        "executables": [
+            "muntjac_core",
+        ],
+    }
+)
+
+filegroup(
+    name = "muntjac_core",
+    srcs = [ ":muntjac_core_fusesoc"] ,
+    output_group = "executables",
+    visibility = [ "//visibility:public", ],
+)
+
