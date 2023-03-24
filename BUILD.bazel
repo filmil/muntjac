@@ -13,7 +13,7 @@ fusesoc_run(
     name = "muntjac_core_fusesoc",
     tool = "verilator",
     target = "sim",
-    cores_root = "@muntjac//:BUILD.bazel",
+    cores_root = ":BUILD.bazel",
     systems = ["lowrisc:muntjac:core_tb:0.1"],
     output_groups = {
         "executables": [
