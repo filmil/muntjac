@@ -3,6 +3,9 @@ ENTRY(_start)
 
 SECTIONS
 {
+  . = 0x7000000;
+  . = ALIGN(0x10000);
+  .tohost : { *(.tohost) }
   . = 0x80000000;
   .text.init : { *(.text.init) }
   . = ALIGN(0x1000);
@@ -10,8 +13,6 @@ SECTIONS
   . = ALIGN(0x1000);
   .data : { *(.data) }
   .bss : { *(.bss) }
-  . = ALIGN(0x10000);
-  .tohost : { *(.tohost) }
   _end = .;
 }
 
