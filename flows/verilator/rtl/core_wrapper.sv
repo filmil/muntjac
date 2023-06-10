@@ -204,7 +204,7 @@ module core_wrapper import muntjac_pkg::*; #(
     .SinkWidth   (SinkWidth),
     .NumLinks    (2),
     .NumAddressRange (1),
-    .AddressBase ({56'h80010000}),
+    .AddressBase ({56'h70010000}),
     .AddressMask ({56'h      3f}),
     .AddressLink ({1'd        1}),
     .NumSinkRange (1),
