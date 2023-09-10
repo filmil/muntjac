@@ -15,7 +15,7 @@
 // See the *_tb.core files to change which flag is set.
 #ifdef FST_ENABLE
   #include "verilated_fst_c.h"
-#endif 
+#endif
 #ifdef VCD_ENABLE
   #include <verilated_vcd_c.h>
 #endif
@@ -48,7 +48,7 @@ public:
 #ifdef FST_ENABLE
     fst_on = false;
     args.add_argument("--fst", "Dump FST output to a file (enable VCD in *_tb.core)", ArgumentParser::ARGS_ONE);
-#endif 
+#endif
 #ifdef VCD_ENABLE
     vcd_on = false;
     args.add_argument("--vcd", "Dump VCD output to a file (enable FST in *_tb.core)", ArgumentParser::ARGS_ONE);
@@ -72,7 +72,7 @@ protected:
     	dut.trace(&vcd_trace, 100);
     	vcd_trace.open(vcd_filename.c_str());
     }
-#endif 
+#endif
 #ifdef FST_ENABLE
     if (fst_on) {
       Verilated::traceEverOn(true);
@@ -87,7 +87,7 @@ protected:
 #ifdef VCD_ENABLE
     if (vcd_on)
       vcd_trace.dump((uint64_t)(10*this->cycle));
-#endif 
+#endif
 #ifdef FST_ENABLE
     if (fst_on)
       fst_trace.dump((uint64_t)(10*this->cycle));
@@ -140,13 +140,13 @@ public:
     args.parse_args(argc, argv);
 
     if (args.found_arg("--timeout"))
-      timeout = std::stoi(args.get_arg("--timeout"));
+      timeout = std::stoul(args.get_arg("--timeout"));
 
     if (this->args.found_arg("--coverage")) {
       coverage_on = true;
       coverage_file = this->args.get_arg("--coverage");
     }
-    
+
 #ifdef FST_ENABLE
     if (args.found_arg("--fst")) {
       fst_filename = args.get_arg("--fst");
@@ -154,7 +154,7 @@ public:
     }
 #endif
 
-#ifdef VCD_ENABLE    
+#ifdef VCD_ENABLE
     if (args.found_arg("--vcd")) {
       vcd_filename = args.get_arg("--vcd");
       vcd_on = true;
@@ -165,7 +165,7 @@ public:
       log_level = 1;
     if (args.found_arg("-vv"))
       log_level = 2;
-    
+
     if (args.found_arg("--help")) {
       args.print_help();
       exit(0);
@@ -190,6 +190,7 @@ protected:
 
   // Force end simulation after this many cycles.
   uint64_t timeout;
+
 
 private:
   // Generate VCD/FST trace file?
@@ -217,7 +218,7 @@ template<class DUT>
 class RISCVSimulation : public Simulation<DUT> {
 public:
 
-  RISCVSimulation(string name) : 
+  RISCVSimulation(string name) :
       Simulation<DUT>(name) {
     main_memory_latency = 10;
     csv_on = false;
@@ -226,6 +227,9 @@ public:
     this->args.set_description("Usage: " + name + " [simulator args] <program> [program args]");
     this->args.add_argument("--memory-latency", "Set main memory latency to a given number of cycles", ArgumentParser::ARGS_ONE);
     this->args.add_argument("--csv", "Dump a CSV trace to a file (mainly for riscv-dv)", ArgumentParser::ARGS_ONE);
+    this->args.add_argument("--initrd", "file containing a relocatable image of a ramdisk", ArgumentParser::ARGS_ONE);
+    this->args.add_argument("--initrd-start", "initrd start address in physical RAM", ArgumentParser::ARGS_ONE);
+    this->args.add_argument("--initrd-is-zbi", "if set, initrd is a ZBI file, else it is an ELF file.", ArgumentParser::ARGS_NONE);
   }
 
 protected:
@@ -284,7 +288,7 @@ public:
 
     this->init();
     this->reset();
-    
+
     this->cycle_second_half();
 
     while (!Verilated::gotFinish() && this->cycle < this->timeout) {
@@ -356,13 +360,44 @@ public:
 
     if (this->args.found_arg("--memory-latency"))
       main_memory_latency = std::stoi(this->args.get_arg("--memory-latency"));
-    
+
     if (this->args.found_arg("--csv")) {
       csv_filename = this->args.get_arg("--csv");
       csv_on = true;
     }
 
     read_binary(argc - binary_position, argv + binary_position);
+
+    if (this->args.found_arg("--initrd")) {
+      this->initrd_file_ = this->args.get_arg("--initrd");
+      if (!this->args.found_arg("--initrd-start")) {
+        throw InvalidArgumentException(
+            "--initrd-start is required when --initrd is specified", 0);
+      }
+      string start_str = this->args.get_arg("--initrd-start");
+      if (start_str.rfind("0x") != 0) {
+        throw InvalidArgumentException(
+            "--initrd-start must be a hexadecimal number starting with 0x", 0);
+      }
+      string start_hex = start_str.substr(2);
+      this->initrd_start_ = std::stoull(start_hex, nullptr, 16);
+      if (this->initrd_start_ == 0) {
+        throw InvalidArgumentException(
+            "--initrd-start must be greater than 0x00", 0);
+      }
+    }
+
+    if (this->args.found_arg("--initrd-is-zbi")) {
+      initrd_elf_ = false;
+    }
+
+    if (!initrd_file_.empty()) {
+      if (initrd_elf_) {
+        BinaryParser::load_elf(initrd_file_, initrd_start_, memory);
+      } else {
+        BinaryParser::load_zbi(initrd_file_, initrd_start_, memory);
+      }
+    }
   }
 
 private:
@@ -421,6 +456,15 @@ private:
   bool csv_on;
   string csv_filename;
   ofstream csv_trace;
+
+  bool initrd_elf_ = true;
+
+  // The file to use for the initial ramdisk.
+  std::string initrd_file_;
+
+  // The address to place the initial ramdisk onto.
+  uint64_t initrd_start_ = 0;
+
 
 // Simulation state.
 

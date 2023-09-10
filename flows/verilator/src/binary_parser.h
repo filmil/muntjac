@@ -5,6 +5,8 @@
 #ifndef BINARY_PARSER_H
 #define BINARY_PARSER_H
 
+#include <string>
+
 #include "types.h"
 
 class MainMemory;
@@ -12,9 +14,14 @@ class MainMemory;
 class BinaryParser {
 
 public:
+  // Load the contents of ZBI image and its arguments into `memory`.
+  static void load_zbi(const std::string& filename, uint64_t offset, MainMemory& memory);
 
   // Load the contents of a RISC-V executable and its arguments into `memory`.
   static void load_elf(int argc, char** argv, MainMemory& memory);
+
+  // Load the contents of a binary file into `memory` at `offset`.
+  static void load_elf(const std::string& filename, uint64_t offset, MainMemory& memory);
 
   // Determine the memory address of the first instruction to be executed in the
   // given program.

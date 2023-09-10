@@ -103,9 +103,9 @@ Elf64_Sym get_symbol(ifstream& file, Elf64_Shdr& section_header, int symbol) {
   return sym;
 }
 
-DataBlock get_section(ifstream& file, Elf64_Shdr& header) {
+DataBlock get_section(ifstream& file, Elf64_Shdr& header, uint64_t pie_offset) {
   uint64_t size = header.sh_size;
-  uint64_t position = header.sh_addr;
+  uint64_t position = header.sh_addr + pie_offset;
   uint64_t offset = header.sh_offset;
 
   char* data = new char[size];
@@ -120,7 +120,7 @@ DataBlock get_section(ifstream& file, Elf64_Shdr& header) {
   return DataBlock(position, size, data_ptr);
 }
 
-vector<DataBlock> elf(char* filename) {
+vector<DataBlock> elf(const char* filename, uint64_t offset = 0) {
   ifstream file(filename);
 
   Elf64_Ehdr elf_header = get_elf_header(file);
@@ -133,7 +133,7 @@ vector<DataBlock> elf(char* filename) {
     // We are only interested in sections to be loaded into memory.
     if ((section_header.sh_flags & SHF_ALLOC) &&   // Alloc = put in memory
         (section_header.sh_type != SHT_NOBITS)) {  // No bits = data not in ELF
-      DataBlock data = get_section(file, section_header);
+      DataBlock data = get_section(file, section_header, offset);
       blocks.push_back(data);
     }
   }
@@ -141,6 +141,23 @@ vector<DataBlock> elf(char* filename) {
   file.close();
 
   return blocks;
+}
+
+void BinaryParser::load_zbi(const std::string& filename, uint64_t offset, MainMemory& memory) {
+  ifstream file(filename, std::ios::binary | std::ios::ate);
+  file.seekg(0, std::ios::end);
+  const size_t len = file.tellg();
+  file.seekg(0, std::ios::beg);
+  shared_ptr<char> data_ptr(new char[len], std::default_delete<char[]>());
+  file.read(data_ptr.get(), len);
+  memory.write(DataBlock(offset, len, data_ptr));
+}
+
+void BinaryParser::load_elf(const std::string& filename, uint64_t offset, MainMemory& memory) {
+  vector<DataBlock> blocks = elf(filename.c_str(), offset);
+  for (int i=0; i<blocks.size(); i++) {
+    memory.write(blocks[i]);
+  }
 }
 
 // Load the contents of a RISC-V executable and its arguments into `memory`.
