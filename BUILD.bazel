@@ -8,10 +8,12 @@ load("//build/fusesoc:rules.bzl", "fusesoc_run")
 
 # If the file core_rtl.bzl does not contain SOURCES, HEADERS and INCLUDE_DIRS,
 # create the file, and add dummy empty entries for those lists.
-load(":core_rtl.bzl",
-    core_rtl_sources="SOURCES",
-    core_rtl_headers="HEADERS",
-    core_rtl_include_dirs="INCLUDE_DIRS")
+load(
+    ":core_rtl.bzl",
+    core_rtl_headers = "HEADERS",
+    core_rtl_include_dirs = "INCLUDE_DIRS",
+    core_rtl_sources = "SOURCES",
+)
 
 exports_files(["**/*"])
 
@@ -22,7 +24,6 @@ filegroup(
     srcs = glob(["**/*"]),
     visibility = ["//visibility:public"],
 )
-
 
 ######################################################################
 # Generating the verilator simulation for the muntjac core.
@@ -81,7 +82,7 @@ fusesoc_run(
     },
     output_groups = {
         # This generated file contains the bazel file lists for this rule.
-        "bzl": [ "default-vivado/core_rtl.bzl" ],
+        "bzl": ["default-vivado/core_rtl.bzl"],
         # List of all source files (no headers).
         "sources": core_rtl_sources,
         # List of all header files.
@@ -167,6 +168,6 @@ write_file(
 sh_binary(
     name = "update",
     srcs = ["update.sh"],
-    data = [ v[0] for v in _GENERATED.values()],
+    data = [v[0] for v in _GENERATED.values()],
 )
 ######################################################################
