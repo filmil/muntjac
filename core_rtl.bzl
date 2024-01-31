@@ -77,9 +77,6 @@ HEADERS = [
 
 INCLUDE_DIRS = [
 	"src/lowrisc_prim_assert_0.1/rtl",
-	"src/lowrisc_prim_assert_0.1/rtl",
-	"src/lowrisc_prim_assert_0.1/rtl",
-	"src/lowrisc_prim_assert_0.1/rtl",
 	"src/lowrisc_prim_util_memload_0/rtl",
 	"src/lowrisc_tl_common_0.1/rtl",
 ]
