@@ -89,7 +89,7 @@ module tl_socket_1n import tl_pkg::*; import prim_util_pkg::*; #(
   logic [NumLinks-1:0] req_ready_mult;
 
   for (genvar i = 0; i < NumLinks; i++) begin
-    assign req_ready_mult[i] = host_a_valid && req_device_id == i && device_a_ready[i];
+    assign req_ready_mult[i] = req_device_id == i && device_a_ready[i];
     assign device_a_valid[i] = host_a_valid && req_device_id == i;
 
     assign device_a[i] = host_a;

@@ -326,22 +326,25 @@ module muntjac_backend import muntjac_pkg::*; #(
   logic fpu_ready;
   logic ex1_ready;
 
+  logic unit_ready;
+
   always_comb begin
     // Treat exception and SYSTEM instruction as a structure hazard, because they may influence
     // control registers so they effectively conflict with any other instruction.
     struct_hazard = !ex1_ready || de_ex_decoded.ex_valid;
+    unit_ready = 1'b1;
     unique case (de_ex_decoded.op_type)
       OP_MEM: begin
-        if (!mem_ready) struct_hazard = 1'b1;
+        unit_ready = mem_ready;
       end
       OP_MUL: begin
-        if (!mul_ready) struct_hazard = 1'b1;
+        unit_ready = mul_ready;
       end
       OP_DIV: begin
-        if (!div_ready) struct_hazard = 1'b1;
+        unit_ready = div_ready;
       end
       OP_FP: begin
-        if (!fpu_ready) struct_hazard = 1'b1;
+        unit_ready = fpu_ready;
       end
       OP_SYSTEM: struct_hazard = 1'b1;
       default:;
@@ -404,8 +407,9 @@ module muntjac_backend import muntjac_pkg::*; #(
   if_reason_e sys_pc_redirect_reason;
   logic [63:0] sys_pc_redirect_target;
 
-  wire ex_issue = de_ex_valid && !data_hazard && !struct_hazard && !control_hazard;
-  assign de_ex_ready = (!data_hazard && !struct_hazard) || control_hazard;
+  wire ex_issue_req = de_ex_valid && !data_hazard && !struct_hazard && !control_hazard;
+  wire ex_issue = ex_issue_req && unit_ready;
+  assign de_ex_ready = (!data_hazard && !struct_hazard && unit_ready) || control_hazard;
 
   always_comb begin
     exception_issue = 1'b0;
@@ -1004,7 +1008,7 @@ module muntjac_backend import muntjac_pkg::*; #(
     .operand_b_i  (ex_rs2),
     .req_word_i   (word),
     .req_op_i     (de_ex_decoded.mul_op),
-    .req_valid_i  (ex_issue && de_ex_decoded.op_type == OP_MUL),
+    .req_valid_i  (ex_issue_req && de_ex_decoded.op_type == OP_MUL),
     .req_ready_o  (mul_ready),
     .resp_valid_o (mul_valid),
     .resp_value_o (mul_data)
@@ -1018,7 +1022,7 @@ module muntjac_backend import muntjac_pkg::*; #(
     .operand_b_i  (ex_rs2),
     .req_op_i     (de_ex_decoded.div_op),
     .req_word_i   (word),
-    .req_valid_i  (ex_issue && de_ex_decoded.op_type == OP_DIV),
+    .req_valid_i  (ex_issue_req && de_ex_decoded.op_type == OP_DIV),
     .req_ready_o  (div_ready),
     .resp_valid_o (div_valid),
     .resp_value_o (div_data)
@@ -1036,7 +1040,7 @@ module muntjac_backend import muntjac_pkg::*; #(
       .foperand_c_i (ex_frs3),
       .req_op_i     (de_ex_decoded.fp_op),
       .req_double_i (!word),
-      .req_valid_i  (ex_issue && de_ex_decoded.op_type == OP_FP),
+      .req_valid_i  (ex_issue_req && de_ex_decoded.op_type == OP_FP),
       .req_rm_i     (muntjac_fpu_pkg::rounding_mode_e'(de_ex_decoded.exception.tval[14:12] == 3'b111 ? frm : de_ex_decoded.exception.tval[14:12])),
       .req_ready_o  (fpu_ready),
       .resp_valid_o (fpu_valid),
@@ -1055,7 +1059,7 @@ module muntjac_backend import muntjac_pkg::*; #(
   //
 
   priv_lvl_e data_prv;
-  assign dcache_h2d_o.req_valid    = ex_issue && de_ex_decoded.op_type == OP_MEM;
+  assign dcache_h2d_o.req_valid    = ex_issue_req && de_ex_decoded.op_type == OP_MEM;
   assign dcache_h2d_o.req_op       = de_ex_decoded.mem_op;
   assign dcache_h2d_o.req_amo      = de_ex_decoded.exception.tval[31:25];
   assign dcache_h2d_o.req_address  = sum;
