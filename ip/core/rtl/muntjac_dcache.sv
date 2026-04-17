@@ -386,6 +386,8 @@ module muntjac_dcache import muntjac_pkg::*; import tl_pkg::*; # (
   logic             mem_a_locked;
   logic [ANums-1:0] mem_a_selected;
 
+  // Use pre-arbitration requests for the arbiter enable instead of post-arbitration
+  // requests, breaking a combinatorial loop from the arbiter back to itself.
   openip_round_robin_arbiter #(.WIDTH(ANums)) mem_a_arb (
     .clk     (clk_i),
     .rstn    (rst_ni),
