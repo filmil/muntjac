@@ -540,11 +540,9 @@ module muntjac_llc import tl_pkg::*; import muntjac_pkg::*; import prim_util_pkg
   logic                           wb_resp_valid;
   logic [WbSourceBits-1:0]        wb_resp_idx;
 
-  logic [WbSources-1:0] wb_req_select_mult;
-
   // Arbitrate multiple writeback requests and route responses
   always_comb begin
-    wb_req_select_mult = 0;
+    wb_req_ready_mult = 0;
     wb_req_valid = 1'b0;
     wb_req_release = 1'bx;
     wb_req_param = 'x;
@@ -552,20 +550,13 @@ module muntjac_llc import tl_pkg::*; import muntjac_pkg::*; import prim_util_pkg
     wb_req_idx = 'x;
     for (int i = 0; i < WbSources; i++) begin
       if (wb_req_valid_mult[i]) begin
-        wb_req_select_mult = 0;
-        wb_req_select_mult[i] = 1'b1;
+        wb_req_ready_mult = 0;
+        wb_req_ready_mult[i] = wb_req_ready;
         wb_req_valid = 1'b1;
         wb_req_release = wb_req_release_mult[i];
         wb_req_param = wb_req_param_mult[i];
         wb_req_address = wb_req_address_mult[i];
         wb_req_idx = i;
-      end
-    end
-
-    wb_req_ready_mult = 0;
-    for (int i = 0; i < WbSources; i++) begin
-      if (wb_req_select_mult[i]) begin
-        wb_req_ready_mult[i] = wb_req_ready;
       end
     end
 
