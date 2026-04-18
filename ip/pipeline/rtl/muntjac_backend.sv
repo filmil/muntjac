@@ -338,8 +338,9 @@ module muntjac_backend import muntjac_pkg::*; #(
 
   logic unit_ready;
   always_comb begin
-    // Separate unit readiness out of `struct_hazard` to prevent unit valid
-    // signals from combinationally depending on unit ready signals.
+    // Separate unit readiness from `struct_hazard` to break the
+    // combinational loop where valid signals depend on ready signals.
+    // Unit readiness is now used directly in pipeline stalls.
     unit_ready = 1'b1;
     unique case (de_ex_decoded.op_type)
       OP_MEM: unit_ready = mem_ready;
@@ -406,9 +407,9 @@ module muntjac_backend import muntjac_pkg::*; #(
   if_reason_e sys_pc_redirect_reason;
   logic [63:0] sys_pc_redirect_target;
 
-  // Compute provisional issue without considering whether the execution unit is ready.
-  // This allows unit valid signals to be generated independently of their ready signals,
-  // breaking the ready->valid combinatorial loop.
+  // `ex_issue_provisional` computes issue without considering `unit_ready`.
+  // This allows unit valid signals to be generated independently of readiness,
+  // preventing valid->ready zero-delay combinational loops.
   wire ex_issue_provisional = de_ex_valid && !data_hazard && !struct_hazard && !control_hazard;
   wire ex_issue = ex_issue_provisional && unit_ready;
   assign de_ex_ready = (!data_hazard && !struct_hazard && unit_ready) || control_hazard;
