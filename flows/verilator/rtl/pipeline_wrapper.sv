@@ -89,6 +89,7 @@ module pipeline_wrapper import muntjac_pkg::*; #(
       .irq_external_m_i,
       .irq_external_s_i,
       .hart_id_i,
+      .hpm_event_i ('0),
       .dbg_o
   );
 

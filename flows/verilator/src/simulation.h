@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <verilated.h>
+#include <verilated_cov.h>
 
 // Verilator doesn't allow VCD and FST tracing simultaneously.
 // FST is faster and smaller, but only supported by GTKWave.
@@ -109,7 +110,7 @@ protected:
     }
 #endif
     if (coverage_on)
-      Verilated::threadContextp()->coveragep()->write(coverage_file.c_str());
+      VerilatedCov::write(coverage_file.c_str());
   }
 
 public:
