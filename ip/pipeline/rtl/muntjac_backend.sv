@@ -85,7 +85,8 @@ module muntjac_backend import muntjac_pkg::*; #(
   // Decoder //
   /////////////
 
-  logic de_ex_valid;
+  // See comment on valid initialization in regslice.sv.
+  logic de_ex_valid = 1'b0;
   logic de_ex_ready;
   decoded_instr_t de_ex_decoded;
   logic [63:0] de_ex_rs1;
