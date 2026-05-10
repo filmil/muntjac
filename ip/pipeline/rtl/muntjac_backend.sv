@@ -142,9 +142,7 @@ module muntjac_backend import muntjac_pkg::*; #(
         // Interrupt injection
         // FIXME: Prefer trap or interrupt?
         if (!de_decoded.ex_valid && int_valid) begin
-          de_ex_decoded.ex_valid <= 1'b1;
-          de_ex_decoded.exception.cause <= int_cause;
-          de_ex_decoded.exception.tval <= '0;
+          de_ex_decoded.ex_valid <= 1'b0;
         end
 
         // Regfile will read register into rs1_value and rs2_value
@@ -1149,8 +1147,8 @@ module muntjac_backend import muntjac_pkg::*; #(
     .satp_o (satp_o),
     .status_o (status_o),
     .frm_o (frm),
-    .ex_valid_i (mem_trap_valid || exception_issue),
-    .ex_exception_i (mem_trap_valid ? mem_trap : de_ex_decoded.exception),
+    .ex_valid_i (mem_trap_valid || exception_issue || int_valid),
+    .ex_exception_i (mem_trap_valid ? mem_trap : (int_valid ? '{cause: int_cause, tval: '0} : de_ex_decoded.exception)),
     .ex_epc_i (mem_trap_valid ? 64'(signed'(ex2_select_q == FU_MEM ? ex2_pc_q : ex1_pc_q)) : de_ex_decoded.pc),
     .ex_tvec_o (exc_tvec_d),
     .er_valid_i (sys_issue && de_ex_decoded.sys_op == SYS_ERET),
